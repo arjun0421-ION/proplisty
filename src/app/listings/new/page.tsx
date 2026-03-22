@@ -1,17 +1,70 @@
 "use client";
 
-import { useState } from "react";
-import { LOCALITIES, PROPERTY_TYPES, LISTING_TYPES } from "@/lib/constants";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { PROPERTY_TYPES, LISTING_TYPES } from "@/lib/constants";
 
 export default function NewListingPage() {
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.push("/auth/login");
+      } else {
+        setUserId(user.id);
+      }
+    });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!userId) return;
     setSubmitting(true);
-    // TODO: Submit to Supabase
-    alert("Listing creation will work once Supabase is connected.");
-    setSubmitting(false);
+    setError("");
+
+    const form = e.currentTarget;
+    const val = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value;
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("listings")
+      .insert({
+        user_id: userId,
+        title: val("title"),
+        description: val("description") || null,
+        listing_type: val("listing_type") as "sale" | "rent",
+        property_type: val("property_type") as "apartment" | "villa" | "plot" | "commercial" | "office" | "shop",
+        price: Number(val("price")),
+        area_sqft: Number(val("area_sqft")),
+        bedrooms: Number(val("bedrooms")) || null,
+        bathrooms: Number(val("bathrooms")) || null,
+        locality: val("locality"),
+        city: val("city"),
+        address: val("address") || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setError(error.message);
+      setSubmitting(false);
+    } else {
+      router.push(`/listings/${data.id}`);
+    }
+  }
+
+  if (!userId) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center text-gray-500">
+        Checking authentication...
+      </div>
+    );
   }
 
   return (
@@ -19,18 +72,22 @@ export default function NewListingPage() {
       <h1 className="text-xl font-semibold text-gray-800 mb-6">Post a New Listing</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Title */}
+        {error && (
+          <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg border border-red-200">
+            {error}
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
           <input
             name="title"
             required
-            placeholder="e.g. Spacious 2 BHK in Baner"
+            placeholder="e.g. Spacious 2 BHK near Metro"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
           />
         </div>
 
-        {/* Listing type & Property type */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Listing Type</label>
@@ -50,7 +107,6 @@ export default function NewListingPage() {
           </div>
         </div>
 
-        {/* Price & Area */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
@@ -62,7 +118,6 @@ export default function NewListingPage() {
           </div>
         </div>
 
-        {/* Bedrooms & Bathrooms */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
@@ -74,34 +129,40 @@ export default function NewListingPage() {
           </div>
         </div>
 
-        {/* Locality */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Locality</label>
-          <select name="locality" required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <option value="">Select locality</option>
-            {LOCALITIES.map((loc) => (
-              <option key={loc} value={loc}>{loc}</option>
-            ))}
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+            <input
+              name="city"
+              required
+              placeholder="e.g. Mumbai, Pune, Bangalore"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Locality / Area</label>
+            <input
+              name="locality"
+              required
+              placeholder="e.g. Baner, Koramangala"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
         </div>
 
-        {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Full Address <span className="text-gray-400 font-normal">(optional)</span></label>
+          <input name="address" placeholder="Street / building name" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-gray-400 font-normal">(optional)</span></label>
           <textarea
             name="description"
             rows={4}
-            placeholder="Describe the property..."
+            placeholder="Describe the property — amenities, nearby landmarks, condition..."
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
           />
-        </div>
-
-        {/* Photos placeholder */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Photos</label>
-          <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center text-gray-400 text-sm">
-            Photo upload will be available once Supabase Storage is connected
-          </div>
         </div>
 
         <button

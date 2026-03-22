@@ -2,9 +2,20 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
-export default function Navbar() {
+export default function Navbar({ user }: { user: User | null }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-amber-100 shadow-sm">
@@ -27,9 +38,18 @@ export default function Navbar() {
           >
             Post Listing
           </Link>
-          <Link href="/auth/login" className="text-gray-600 hover:text-amber-700">
-            Login
-          </Link>
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="text-gray-600 hover:text-amber-700"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link href="/auth/login" className="text-gray-600 hover:text-amber-700">
+              Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -60,9 +80,18 @@ export default function Navbar() {
           <Link href="/listings/new" className="block py-2 text-amber-700 font-medium" onClick={() => setMenuOpen(false)}>
             Post Listing
           </Link>
-          <Link href="/auth/login" className="block py-2 text-gray-600" onClick={() => setMenuOpen(false)}>
-            Login
-          </Link>
+          {user ? (
+            <button
+              onClick={() => { setMenuOpen(false); handleLogout(); }}
+              className="block py-2 text-gray-600 w-full text-left"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link href="/auth/login" className="block py-2 text-gray-600" onClick={() => setMenuOpen(false)}>
+              Login
+            </Link>
+          )}
         </div>
       )}
     </nav>

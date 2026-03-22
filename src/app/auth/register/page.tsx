@@ -2,16 +2,40 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    // TODO: Supabase auth sign up
-    alert("Registration will work once Supabase Auth is configured.");
-    setLoading(false);
+    setError("");
+
+    const form = e.currentTarget;
+    const full_name = (form.elements.namedItem("full_name") as HTMLInputElement).value;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const phone = (form.elements.namedItem("phone") as HTMLInputElement).value;
+    const role = (form.elements.namedItem("role") as HTMLSelectElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name, phone, role } },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      router.push("/");
+      router.refresh();
+    }
   }
 
   return (
@@ -22,6 +46,11 @@ export default function RegisterPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        {error && (
+          <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg border border-red-200">
+            {error}
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
           <input
