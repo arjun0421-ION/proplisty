@@ -18,8 +18,23 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["users"]["Row"], "created_at" | "updated_at">;
-        Update: Partial<Database["public"]["Tables"]["users"]["Insert"]>;
+        Insert: {
+          id: string;
+          email: string;
+          phone?: string | null;
+          phone_verified?: boolean;
+          role: UserRole;
+          full_name: string;
+          avatar_url?: string | null;
+        };
+        Update: {
+          email?: string;
+          phone?: string | null;
+          phone_verified?: boolean;
+          role?: UserRole;
+          full_name?: string;
+          avatar_url?: string | null;
+        };
       };
       profiles: {
         Row: {
@@ -36,8 +51,23 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["profiles"]["Row"], "id" | "created_at" | "updated_at" | "response_rate" | "total_listings">;
-        Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Insert: {
+          user_id: string;
+          company_name?: string | null;
+          bio?: string | null;
+          rera_number?: string | null;
+          experience_years?: number | null;
+          localities_served?: string[];
+          logo_url?: string | null;
+        };
+        Update: {
+          company_name?: string | null;
+          bio?: string | null;
+          rera_number?: string | null;
+          experience_years?: number | null;
+          localities_served?: string[];
+          logo_url?: string | null;
+        };
       };
       listings: {
         Row: {
@@ -63,8 +93,45 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["listings"]["Row"], "id" | "created_at" | "updated_at" | "status"> & { status?: ListingStatus };
-        Update: Partial<Database["public"]["Tables"]["listings"]["Insert"]>;
+        Insert: {
+          user_id: string;
+          title: string;
+          description?: string | null;
+          property_type: PropertyType;
+          listing_type: ListingType;
+          price: number;
+          area_sqft: number;
+          bedrooms?: number | null;
+          bathrooms?: number | null;
+          locality: string;
+          address?: string | null;
+          city: string;
+          photos?: string[];
+          status?: ListingStatus;
+          furnishing?: string | null;
+          floor_number?: number | null;
+          total_floors?: number | null;
+          amenities?: string[];
+        };
+        Update: {
+          title?: string;
+          description?: string | null;
+          property_type?: PropertyType;
+          listing_type?: ListingType;
+          price?: number;
+          area_sqft?: number;
+          bedrooms?: number | null;
+          bathrooms?: number | null;
+          locality?: string;
+          address?: string | null;
+          city?: string;
+          photos?: string[];
+          status?: ListingStatus;
+          furnishing?: string | null;
+          floor_number?: number | null;
+          total_floors?: number | null;
+          amenities?: string[];
+        };
       };
       inquiries: {
         Row: {
@@ -76,8 +143,15 @@ export interface Database {
           is_read: boolean;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["inquiries"]["Row"], "id" | "created_at" | "is_read">;
-        Update: Partial<Database["public"]["Tables"]["inquiries"]["Insert"]>;
+        Insert: {
+          listing_id: string;
+          sender_id: string;
+          receiver_id: string;
+          message: string;
+        };
+        Update: {
+          is_read?: boolean;
+        };
       };
       saved_listings: {
         Row: {
@@ -86,8 +160,11 @@ export interface Database {
           listing_id: string;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["saved_listings"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["saved_listings"]["Insert"]>;
+        Insert: {
+          user_id: string;
+          listing_id: string;
+        };
+        Update: Record<string, never>;
       };
       projects: {
         Row: {
@@ -110,8 +187,39 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["projects"]["Row"], "id" | "created_at" | "updated_at">;
-        Update: Partial<Database["public"]["Tables"]["projects"]["Insert"]>;
+        Insert: {
+          builder_id: string;
+          name: string;
+          description?: string | null;
+          locality: string;
+          city: string;
+          price_range_min: number;
+          price_range_max: number;
+          property_types?: PropertyType[];
+          brochure_url?: string | null;
+          floor_plan_urls?: string[];
+          photos?: string[];
+          launch_date?: string | null;
+          possession_date?: string | null;
+          rera_id?: string | null;
+          status?: "upcoming" | "ongoing" | "completed";
+        };
+        Update: {
+          name?: string;
+          description?: string | null;
+          locality?: string;
+          city?: string;
+          price_range_min?: number;
+          price_range_max?: number;
+          property_types?: PropertyType[];
+          brochure_url?: string | null;
+          floor_plan_urls?: string[];
+          photos?: string[];
+          launch_date?: string | null;
+          possession_date?: string | null;
+          rera_id?: string | null;
+          status?: "upcoming" | "ongoing" | "completed";
+        };
       };
     };
     Views: Record<string, never>;
